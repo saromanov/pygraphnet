@@ -33,7 +33,7 @@ class InitGraph(unittest.TestCase):
         pass
 
     def test_product(self):
-        g = Graph()
+        g = graph.Graph()
         g.add_node('A')
         g.add_node('B')
         g.add_node('C')
@@ -61,10 +61,11 @@ class ShortPathAlgorithms(unittest.TestCase):
         algo = algorithms.GraphAlgorithms.easy_short_path(gr,'s', 'y')
 
 
-class TreeTest(unittest.TestCase):
-    def test_basic_tree(self):
-        t = BTree()
-        t.create_nodes('a')
+class RandomGraphTest(unittest.TestCase):
+    def test_random_graph():
+        rand = RandomGraph(20,0.2)
+        result = list(rand.getEdges().keys())
+        self.assertEqual(result, list(range(1,20)))
 
 
 if __name__ == "__main__":

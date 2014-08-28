@@ -171,10 +171,7 @@ class NodePosition(StructNode):
 class Edge:
     def __init__(self, inedge, outedge, **kwargs):
 
-        if not isinstance(outedge, list):
-            self.outedge = [outedge]
-        else:
-            self.outedge = outedge
+        self.outedge = outedge
         self.value = self.outedge
         self.inedge = inedge
         self.weight = kwargs.get('weight')
@@ -581,7 +578,6 @@ class Graph(AbstractGraph):
             'Failed to open this file', filename).readlines()
         adding = lambda data: self.add_node(data[0])
         result = [adding(i.split()) for i in data]
-        print(result)
         return open(filename).read()
 
     #Загрузка графа из файла формата json
@@ -617,6 +613,13 @@ class Graph(AbstractGraph):
     def schematic(self, expr):
         sc = SchematicGraph()
         sc.add(expr)
+
+    def get_edges(self):
+        '''
+            Return all pair of edges in human view
+        '''
+        for node in self.graphbase.values():
+           yield(node.node, list(map(lambda x: x.outedge.node, node.connected)))
 
 
 #Add with schematic
@@ -792,8 +795,8 @@ class HyperGraph(Graph):
 
 
 class RandomGraph(Graph):
-    def __init__(self):
-        pass
+    def __init__(self, num, prob):
+        self.g = self._constructGraph(num, prob)
 
     def constructAdjMatrix(self, num, prob):
         '''
@@ -801,13 +804,24 @@ class RandomGraph(Graph):
         '''
         return np.random.binomial(1, self._prob, (self._num, self._num))
 
-    def constructGraph(self):
+    def _constructGraph(self, num, prob):
         self.g = Graph()
-        self.g.add_nodes(range(1, num))
-        for n in range(1,num):
-            for n2 in range(1, num):
-                if n != n2 and np.random.binomial(1, self._prob) != 0:
+        self.g.add_nodes(range(1, num+1))
+        for n in range(1,num+1):
+            for n2 in range(1, num+1):
+                if n != n2 and np.random.binomial(1, prob) != 0:
                     self.g.add_edge(n, n2)
+        return self.g
+
+    def mostConnectedNode(self):
+        '''
+            return most connected node from random graph
+        '''
+        edges = self.g.get_edges()
+        return sorted(lambda x:len(x.connected), edges)
+
+    def getEdges(self):
+        return self.g.get_edges()
 
 #Граф интересов (посмотреть)
 class InterestGraph(Graph):
@@ -890,6 +904,7 @@ def test_hypergraph():
     #h.findConnectionBetweenGroups('Red', 'Green')
     print(h.is_balanced())
 
+
 #test_schematic()
 print('Дальше, алгоритм B*star, Persistent graph, Random Graph and Semantic Graph')
 '''gr = Graph()
@@ -898,6 +913,6 @@ gr.load('plain')'''
 #ad = Adjacency()
 #ad.add_edge(1, 2)
 
-test_schematic2()
+#test_schematic2()
 #test_hypergraph()
 
