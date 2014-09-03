@@ -377,6 +377,21 @@ class Graph(AbstractGraph):
     def nodes(self):
         return list(self.graphbase.values())
 
+    def rename_node(self, node, newname):
+        if self.has_node(node):
+            temp = self.graphbase[node]
+            del self.graphbase[node]
+            self.graphbase[newname] = temp
+            for ch in self.nodes():
+                if ch.node == node:
+                    ch.node = newname
+                else:
+                    if len(ch.connected) > 0:
+                        #dove = list(filter(lambda x: x.inedge.node == node, ch.connected))
+                        for conn in ch.connected:
+                            if conn.outedge.node == node:
+                                conn.outedge.node = newname  
+
     #Соседние вершины у ноды соединённые отрезком
     #!Дописать
     def neighbors(self, node):
@@ -491,15 +506,11 @@ class Graph(AbstractGraph):
     def __mul__(self, another_graph):
         if(not isinstance(another_graph, Graph)):
             raise GraphException("This is not type of Graph")
+        product = GraphProduct()
+        product.cartesian(self, another_graph)
 
-        memarray=  []
-        for node in self.graphbase.items():
-            for conn_node in another_graph.nodes():
-                another_graph.add_edge_from_nodes(node[1], conn_node)
-                memarray.append([node[1],conn_node])
-
-        for arr in memarray:
-            self.add_edge_from_nodes(arr[0], arr[1])
+    def tensorProduct(self, another_graph):
+        pass
 
 
     # Проверка на циклы
@@ -620,6 +631,42 @@ class Graph(AbstractGraph):
         '''
         for node in self.graphbase.values():
            yield(node.node, list(map(lambda x: x.outedge.node, node.connected)))
+
+
+#http://en.wikipedia.org/wiki/Graph_product
+class GraphProduct():
+    def __init__(self):
+        self.minv = 100
+        self.maxv = 999
+
+    def _preCartesian(self, graph1, graph2):
+        '''
+            Rename duplicate nodes
+        '''
+        for node in graph2.nodes():
+            if graph1.has_node(node.node):
+                graph2 = self._renameNode(graph2, node.node, node.node)
+        return graph2
+    def cartesian(self, graph1, graph2):
+        graph2 = self._preCartesian(graph1, graph2)
+        for node in graph1.nodes():
+            for another_edges in graph2.get_edges():
+                graph1.add_node(another_edges[0])
+                graph1.add_edge(node.node, another_edges[0], rev=True)
+        print(list(graph1.get_edges()))
+
+    def _cart_connect_new_graph(graph1, graph2):
+        pass
+
+    def _renameNode(self, graph, oldnode, node):
+        '''
+            In the case if graph already contain node with the same name
+        '''
+        if graph.has_node(node):
+            return self._renameNode(graph, oldnode, node + str(random.randint(self.minv\
+                ,self.maxv)))
+        graph.rename_node(oldnode, node)
+        return graph
 
 
 #Add with schematic
@@ -852,13 +899,33 @@ def test_graph_product():
     g.add_node('B')
     g.add_node('C')
     g.add_node('D')
+    g.add_node('E')
+    g.add_edge('A', 'B')
+    g.add_edge('B', 'C')
+    g.add_edge('B', 'D')
+    g.add_edge('C', 'E')
+    g.add_edge('C', 'A')
+    g.add_edge('D', 'E')
+    g.rename_node('A', 'A1')
 
 
     tg = Graph()
-    tg.add_node('E')
-    tg.add_node('F')
-    tg.add_edge('E','F')
+    '''tg.add_node('A')
+    tg.add_node('B')
+    tg.add_node('C')
+    tg.add_node('D')
+    tg.add_edge('A', 'B')
+    tg.add_edge('B','C')
+    tg.add_edge('B','D')'''
+    tg.add_node('W')
+    tg.add_node('P')
+    tg.add_node('T')
+    tg.add_node('K')
+    tg.add_edge('W', 'P')
+    tg.add_edge('P','T')
+    tg.add_edge('P','K')
 
+    #basic cartesian product
     newgraph = g * tg
     print(newgraph)
 
@@ -905,8 +972,9 @@ def test_hypergraph():
     print(h.is_balanced())
 
 
+test_graph_product()
 #test_schematic()
-print('Дальше, алгоритм B*star, Persistent graph, Random Graph and Semantic Graph')
+print('Дальше, алгоритм B*star, Persistent graph, and Semantic Graph')
 '''gr = Graph()
 gr.load('plain')'''
 
