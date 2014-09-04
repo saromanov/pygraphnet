@@ -632,6 +632,11 @@ class Graph(AbstractGraph):
         for node in self.graphbase.values():
            yield(node.node, list(map(lambda x: x.outedge.node, node.connected)))
 
+class CartesianNode:
+    def __init__(self, node1, node2, newnode):
+        self.node1 = node1
+        self.node2 = node2
+        self.newnode = newnode
 
 #http://en.wikipedia.org/wiki/Graph_product
 class GraphProduct():
@@ -649,10 +654,15 @@ class GraphProduct():
         return graph2
     def cartesian(self, graph1, graph2):
         graph2 = self._preCartesian(graph1, graph2)
+        newnodes = []
+        newgraph = Graph()
+        print("EDGES: ", list(graph1.get_edges()))
         for node in graph1.nodes():
-            for another_edges in graph2.get_edges():
-                graph1.add_node(another_edges[0])
-                graph1.add_edge(node.node, another_edges[0], rev=True)
+            for node2 in graph2.nodes():
+                 newnodes.append(CartesianNode(node, node2, node.node+node2.node))
+        for newnode in newnodes:
+            newgraph.add_node(newnode.newnode)
+                
         print(list(graph1.get_edges()))
 
     def _cart_connect_new_graph(graph1, graph2):
