@@ -404,6 +404,24 @@ class Graph(AbstractGraph):
         self.edgebase.append(Edge(node1, node2, args))
 
 
+    def has_edge(self, node1, node2):
+        '''
+            Check if between node1 and node2 has edge
+        '''
+        if isinstance(node1, StructNode) and isinstance(node2, StructNode):
+            return self._has_edge_inner(node1.node, node2.node)
+        if isinstance(node1, StructNode):
+            return self._has_edge_inner(node1.node, node2)
+        if isinstance(node2, StructNode):
+            return self._has_edge_inner(node1, node2.node)
+        return self._has_edge_inner(node1, node2)
+
+    def _has_edge_inner(self, node1, node2):
+        if self.has_node(node1) and self.has_node(node2):
+            return node2 in \
+            list(map(lambda x: x.outedge.node, self.graphbase[node1].connected))
+        return False
+
     '''arguments:
     rev - pair connect between nodes'''
     def add_edge(self, inedge, outedge, **kwargs):
@@ -412,11 +430,11 @@ class Graph(AbstractGraph):
         #In case when edge not exists, create it
         node1 = self.check_and_create(inedge)
         node2 = self.check_and_create(outedge)
-
-        # assert self.has_nodes(HelpGraph(outedge).chesk_type())]
-        self.graphbase[inedge].add_connect(Edge(node1, node2, **kwargs))
-        if reverse != None:
-            self.graphbase[outedge].add_connect(Edge(node2, node1,**kwargs))
+        if not self.has_edge(node1, node2):
+            # assert self.has_nodes(HelpGraph(outedge).chesk_type())]
+            self.graphbase[inedge].add_connect(Edge(node1, node2, **kwargs))
+            if reverse != None:
+                self.graphbase[outedge].add_connect(Edge(node2, node1,**kwargs))
 
 
     '''Input params - StructNodes'''
@@ -507,7 +525,7 @@ class Graph(AbstractGraph):
         if(not isinstance(another_graph, Graph)):
             raise GraphException("This is not type of Graph")
         product = GraphProduct()
-        product.cartesian(self, another_graph)
+        return product.cartesian(self, another_graph)
 
     def tensorProduct(self, another_graph):
         pass
@@ -656,14 +674,18 @@ class GraphProduct():
         graph2 = self._preCartesian(graph1, graph2)
         newnodes = []
         newgraph = Graph()
-        print("EDGES: ", list(graph1.get_edges()))
         for node in graph1.nodes():
             for node2 in graph2.nodes():
                  newnodes.append(CartesianNode(node, node2, node.node+node2.node))
-        for newnode in newnodes:
-            newgraph.add_node(newnode.newnode)
-                
-        print(list(graph1.get_edges()))
+        [newgraph.add_node(newnode.newnode) for newnode in newnodes]   
+        for oldnode in newnodes:
+            for conn1 in oldnode.node1.connected:
+                newgraph.add_edge(oldnode.newnode,  conn1.outedge.node + oldnode.node2.node)
+                newgraph.add_edge(conn1.outedge.node + oldnode.node2.node, oldnode.newnode)
+            for conn1 in oldnode.node2.connected:
+                newgraph.add_edge(oldnode.newnode,  oldnode.node1.node+ conn1.outedge.node)
+                newgraph.add_edge(oldnode.node1.node+ conn1.outedge.node, oldnode.newnode)
+        return newgraph
 
     def _cart_connect_new_graph(graph1, graph2):
         pass
@@ -900,46 +922,6 @@ class GraphException(Exception):
 #h = HyperGraph()
 #h.add_node_set("A", ["B","C"])
 
-
-#Test area
-
-def test_graph_product():
-    g = Graph()
-    g.add_node('A')
-    g.add_node('B')
-    g.add_node('C')
-    g.add_node('D')
-    g.add_node('E')
-    g.add_edge('A', 'B')
-    g.add_edge('B', 'C')
-    g.add_edge('B', 'D')
-    g.add_edge('C', 'E')
-    g.add_edge('C', 'A')
-    g.add_edge('D', 'E')
-    g.rename_node('A', 'A1')
-
-
-    tg = Graph()
-    '''tg.add_node('A')
-    tg.add_node('B')
-    tg.add_node('C')
-    tg.add_node('D')
-    tg.add_edge('A', 'B')
-    tg.add_edge('B','C')
-    tg.add_edge('B','D')'''
-    tg.add_node('W')
-    tg.add_node('P')
-    tg.add_node('T')
-    tg.add_node('K')
-    tg.add_edge('W', 'P')
-    tg.add_edge('P','T')
-    tg.add_edge('P','K')
-
-    #basic cartesian product
-    newgraph = g * tg
-    print(newgraph)
-
-
 # b->q
 # b<->q
 # b/q   и не включает q
@@ -980,17 +962,3 @@ def test_hypergraph():
     h.addNode('Black', 'x6')
     #h.findConnectionBetweenGroups('Red', 'Green')
     print(h.is_balanced())
-
-
-test_graph_product()
-#test_schematic()
-print('Дальше, алгоритм B*star, Persistent graph, and Semantic Graph')
-'''gr = Graph()
-gr.load('plain')'''
-
-#ad = Adjacency()
-#ad.add_edge(1, 2)
-
-#test_schematic2()
-#test_hypergraph()
-
