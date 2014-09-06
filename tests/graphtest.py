@@ -64,15 +64,8 @@ class RandomGraphTest(unittest.TestCase):
         self.assertEqual(result, list(range(1,21)))
 
 class CartesianProductGraphTest(unittest.TestCase):
-    def test_basic_car_product(self):
-        gr1 = graph.Graph()
-        gr1.add_edge("A","B", rev=True)
-        gr1.add_edge("A","C", rev=True)
-        gr2 = graph.Graph()
-        gr2.add_edge("P","W", rev=True)
-        result = gr1 * gr2
-        #self.assertEqual(sorted(list(result.get_edges())), value)
-    def test_graph_product(self):
+
+    def setUp(self):
         g = graph.Graph()
         g.add_node('A')
         g.add_node('B')
@@ -92,9 +85,22 @@ class CartesianProductGraphTest(unittest.TestCase):
         tg.add_edge('W', 'P', rev=True)
         tg.add_edge('P','T', rev=True)
         tg.add_edge('P','K', rev=True)
+        self.g = g
+        self.tg = tg
 
-        newgraph = g * tg
+    def test_basic_car_product(self):
+        gr1 = graph.Graph()
+        gr1.add_edge("A","B", rev=True)
+        gr1.add_edge("A","C", rev=True)
+        gr2 = graph.Graph()
+        gr2.add_edge("P","W", rev=True)
+        result = gr1 * gr2
+        #self.assertEqual(sorted(list(result.get_edges())), value)
+    def test_graph_product(self):
+        newgraph = self.g * self.tg
 
+    def test_tensor_product(self):
+        newgraph = self.g.tensorProduct(self.tg)
 
 
 if __name__ == "__main__":

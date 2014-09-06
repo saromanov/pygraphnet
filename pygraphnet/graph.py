@@ -520,15 +520,20 @@ class Graph(AbstractGraph):
     #Get weight os current node
 
 
+    def _checkGraphType(self, somegraph):
+        if(not isinstance(somegraph, Graph)):
+            raise GraphException("This is not type of Graph")
+
     #Implementation of cartesian product
     def __mul__(self, another_graph):
-        if(not isinstance(another_graph, Graph)):
-            raise GraphException("This is not type of Graph")
+        self._checkGraphType(another_graph)
         product = GraphProduct()
         return product.cartesian(self, another_graph)
 
     def tensorProduct(self, another_graph):
-        pass
+        self._checkGraphType(another_graph)
+        tensor = GraphProduct()
+        return tensor.tensor(self, another_graph)
 
 
     # Проверка на циклы
@@ -650,7 +655,7 @@ class Graph(AbstractGraph):
         for node in self.graphbase.values():
            yield(node.node, list(map(lambda x: x.outedge.node, node.connected)))
 
-class CartesianNode:
+class NewNode:
     def __init__(self, node1, node2, newnode):
         self.node1 = node1
         self.node2 = node2
@@ -662,6 +667,25 @@ class GraphProduct():
         self.minv = 100
         self.maxv = 999
 
+    def _createNewNodes(self, graph1, graph2):
+        '''
+            Create newnodes as product of two node names in graph
+            For example: Node A and Node B will be Node AB
+        '''
+        newnodes = []
+        #Check types and count of nodes
+        nodes1 = graph1.nodes()
+        nodes2 = graph2.nodes()
+        if len(nodes1) == 0 or len(nodes2) == 0:
+            raise GraphException("Product graph: Count of nodes is zero in one of graph")
+        if not isinstance(nodes1[0], StructNode) or not isinstance(nodes2[0], StructNode):
+            raise GraphException("Product graph: type of nodes is not StructNode")
+        for node in graph1.nodes():
+            for node2 in graph2.nodes():
+                if isinstance(node.node, str) and isinstance(node2.node, str):
+                    newnodes.append(NewNode(node, node2, node.node+node2.node))
+        return newnodes
+
     def _preCartesian(self, graph1, graph2):
         '''
             Rename duplicate nodes
@@ -670,13 +694,11 @@ class GraphProduct():
             if graph1.has_node(node.node):
                 graph2 = self._renameNode(graph2, node.node, node.node)
         return graph2
+
     def cartesian(self, graph1, graph2):
         graph2 = self._preCartesian(graph1, graph2)
-        newnodes = []
         newgraph = Graph()
-        for node in graph1.nodes():
-            for node2 in graph2.nodes():
-                 newnodes.append(CartesianNode(node, node2, node.node+node2.node))
+        newnodes = self._createNewNodes(graph1, graph2)
         [newgraph.add_node(newnode.newnode) for newnode in newnodes]   
         for oldnode in newnodes:
             for conn1 in oldnode.node1.connected:
@@ -685,6 +707,22 @@ class GraphProduct():
             for conn1 in oldnode.node2.connected:
                 newgraph.add_edge(oldnode.newnode,  oldnode.node1.node+ conn1.outedge.node)
                 newgraph.add_edge(oldnode.node1.node+ conn1.outedge.node, oldnode.newnode)
+        return newgraph
+
+    def tensor(self, graph1, graph2):
+        '''
+            Result is bipartite double cover
+
+        '''
+        graph2 = self._preCartesian(graph1, graph2)
+        newgraph = Graph()
+        newnodes = self._createNewNodes(graph1, graph2)
+        for oldnode in newnodes:
+            conn1 = list(map(lambda x: x.outedge.node, oldnode.node1.connected))
+            conn2 = list(map(lambda x: x.outedge.node, oldnode.node2.connected))
+            for c1 in conn1:
+                for c2 in conn2:
+                    newgraph.add_edge(oldnode.newnode, c1 + c2, rev=True)
         return newgraph
 
     def _cart_connect_new_graph(graph1, graph2):
