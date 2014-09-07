@@ -13,26 +13,6 @@ import graph
 from abstract import ShortestPath, Codes
 import numpy as np
 
-#Write info for the each step
-#http://www.columbia.edu/~mc2775/publications.html
-#http://en.wikipedia.org/wiki/Book:Graph_Algorithms
-#http://en.wikipedia.org/wiki/K_shortest_path_routing
-
-#Поработать над алгоритмами с циклическими графами
-
-#Course 6.889: Algorithms for Planner Graphs and Beoynd (Fall 2011)
-
-#Бенчмаркинг кода http://www.huyng.com/posts/python-performance-analysis/
-#Просмотр объектов  виде графа http://mg.pov.lt/objgraph/
-
-#Structure of complex network (стр 18)
-#http://www.maths.qmul.ac.uk/~latora/report_06.pdf
-
-#Много информации по графам
-#http://www.math.cmu.edu/~ctsourak/amazing.html
-
-#Анализ кода
-#http://www.pylint.org/
 
 class GraphAlgorithms:
     @classmethod
@@ -689,35 +669,24 @@ class SequenceRandomGraph(PuppetRandomGraph):
         g = self._emptyGraph()
 
 
-#http://www.iecn.u-nancy.fr/~chassain/djvu/SpencerStFlour.pdf
-class RandomGraph(PuppetRandomGraph):
-    def __init__(nodes):
-        self.nodes = nodes
-        self.length = len(nodes)
+class ChromaticNumber:
+    def __init__(self, sgraph):
+        self.sgraph = sgraph
+        self.edges = list(self.sgraph.get_edges())
 
-    def generate(self):
-        raise NotImplemented
+    def run(self):
+        '''
+            Naive approach,
+            return - min number of colors
+            Кликовое число графа
+        '''
+        if self._isFullGraph():
+            return len(sgraph.nodes())
 
+        sortedges = list(reversed(sorted(self.edges, key=lambda x: len(x[1]))))
 
-#Генерируем случайную связанность с помощью распределений из np.random
-#Например, gamma distribution
-class RandomGraphDistribution(PuppetRandomGraph):
-    def __init__(self, nodes):
-        super(RandomGraphDistribution, self).__init__()
-        self.nodes = nodes
-        self.length = len(nodes)
-        self.sgraph = graph.Graph()
-
-    def generate(self):
-        nnodes = [round(x) for x in np.random.gamma(1, 5, self.length)]
-        #self.sgraph.add_nodes(nnodes)
-        nnodes2 = [round(x) for x in np.random.gamma(2, 2, self.length)]
-        for innode, outnode in zip(nnodes, nnodes2):
-            self.sgraph.add_edge(innode, outnode)
-        #Проверить правильность добавления!
-
-        #print('Distribution: ', nnodes, nnodes2)
-        #print(self.nodes)
+    def _isFullGraph(self):
+        return len(list(filter(lambda x: len(x[1]) != len(self.sgraph.nodes())-1, self.edges))) == 0
 
 def test_nodes():
     g = graph.Graph()
@@ -814,101 +783,3 @@ def tree_contraction(bin_tree):
         for new_node in node.values():
             splee.append([node, newtree])
     return splee
-
-
-def construct_graph():
-    g = graph.Graph({0:[3], 1:[2], 2:[3], 3:[0, 1]})
-    g.add_node(1)
-    g.add_node(1)
-    g.add_node(2)
-    g.add_node(3)
-    g.add_node(4)
-    g.add_node(5)
-    g.add_node(6)
-    g.add_edge(1,4, weight=5)
-    g.add_edge(1,2, weight=6)
-    g.add_edge(1,3, weight=1)
-    g.add_edge(2,3, weight=5)
-    g.add_edge(2,5, weight=3)
-    g.add_edge(5,3, weight=6)
-    g.add_edge(5,6, weight=6)
-    g.add_edge(6,3, weight=4)
-    g.add_edge(6,4, weight=2)
-    g.add_edge(5,6, weight=6)
-    g.add_edge(4,3, weight=5)
-    return g
-
-
-def test_random_walk():
-    gr = construct_graph()
-    algo = Algorithms(gr)
-    algo.random_walk()
-
-def test_prim2():
-    pr = Prim(construct_graph())
-    print(pr.run(2))
-#http://www.frc.ri.cmu.edu/~axs/doc/icra94.pdf
-class Dstar:
-    def __init__(self):
-        pass
-
-
-def test_eurelian():
-    path = {0:[3], 1:[2], 2:[3], 3:[0, 1]}
-    gr = graph.Graph(path)
-    eu = Eurelian(gr)
-    eu.path(gr)
-
-def optional_test_rank():
-    gr = construct_graph()
-    #print(gr.set_simple_rank(4, lambda x:x.weight > 2))
-
-def test_morph():
-    gr = construct_graph()
-    morph = GraphMorph(gr)
-    morph.is_isomorphic(gr)
-
-#Алгоритм Дейкестры вики
-'''BUG with multi connection !!!!!!
-g.add_edge(6,3, weight=4, rev=True)
-g.add_edge(3,6, weight=4, rev=True)
-'''
-def dijkestra_test():
-    path = {1:[2,3,6], 2:[1,4,3], 3:[1,2,4,6], 4:[3,2,5], 5:[4,6], 6:[5,3,1]}
-    gr = graph.Graph(path)
-    gr.add_edge(1,2, weight=7)
-    gr.add_edge(1,3, weight=9)
-    gr.add_edge(1,6, weight=14)
-    gr.add_edge(2,1, weight=7)
-    gr.add_edge(2,4, weight=15)
-    gr.add_edge(2,3, weight=10)
-    gr.add_edge(3,1, weight=9)
-    gr.add_edge(3,6, weight=2)
-    gr.add_edge(3,4, weight=11)
-    gr.add_edge(3,2, weight=10)
-    gr.add_edge(4,3, weight=11)
-    gr.add_edge(4,2, weight=15)
-    gr.add_edge(4,5, weight=6)
-    gr.add_edge(5,6, weight=9)
-    gr.add_edge(5,4, weight=6)
-    gr.add_edge(6,5, weight=9)
-    gr.add_edge(6,1, weight=14)
-    gr.add_edge(6,3, weight=2)
-    al = Algorithms(gr)
-    al.dijkestra(1)
-
-
-def test_sequence_random_graph():
-    s = SequenceRandomGraph([5,2,3,1], 4)
-    s.generate()
-
-def test_random_graph_distibution():
-    r = RandomGraphDistribution([2,5,7,8,6,9])
-    r.generate()
-
-test_random_graph_distibution()
-#test_sequence_random_graph()
-#dijkestra_test()
-#test_morph()
-#test_random_walk()
-

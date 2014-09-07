@@ -530,6 +530,11 @@ class Graph(AbstractGraph):
         product = GraphProduct()
         return product.cartesian(self, another_graph)
 
+    def randomCartProduct(self, another_graph, p):
+        self._checkGraphType(another_graph)
+        randprod = GraphProduct()
+        return randprod.random_cartesian(self, another_graph, p)
+
     def tensorProduct(self, another_graph):
         self._checkGraphType(another_graph)
         tensor = GraphProduct()
@@ -707,6 +712,28 @@ class GraphProduct():
             for conn1 in oldnode.node2.connected:
                 newgraph.add_edge(oldnode.newnode,  oldnode.node1.node+ conn1.outedge.node)
                 newgraph.add_edge(oldnode.node1.node+ conn1.outedge.node, oldnode.newnode)
+        return newgraph
+
+    def random_cartesian(self, graph1, graph2, p):
+        '''
+            Same as cartesian product, but edges put randomly
+            with probability p
+        '''
+        graph2 = self._preCartesian(graph1, graph2)
+        newgraph = Graph()
+        newnodes = self._createNewNodes(graph1, graph2)
+        mask = np.random.binomial(1, p, ((len(newnodes) * len(newnodes)-1)/2))
+        for oldnode in newnodes:
+            for conn1 in oldnode.node1.connected:
+                if mask[0] == 1:
+                    newgraph.add_edge(oldnode.newnode,  conn1.outedge.node + oldnode.node2.node)
+                    newgraph.add_edge(conn1.outedge.node + oldnode.node2.node, oldnode.newnode)
+                mask = mask[1:]
+            for conn1 in oldnode.node2.connected:
+                if mask[0] == 1:
+                    newgraph.add_edge(oldnode.newnode,  oldnode.node1.node+ conn1.outedge.node)
+                    newgraph.add_edge(oldnode.node1.node+ conn1.outedge.node, oldnode.newnode)
+                mask = mask[1:]
         return newgraph
 
     def tensor(self, graph1, graph2):
