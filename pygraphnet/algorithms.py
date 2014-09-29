@@ -14,6 +14,27 @@ from abstract import ShortestPath, Codes
 import numpy as np
 
 
+#Write info for the each step
+#http://www.columbia.edu/~mc2775/publications.html
+#http://en.wikipedia.org/wiki/Book:Graph_Algorithms
+#http://en.wikipedia.org/wiki/K_shortest_path_routing
+
+#Поработать над алгоритмами с циклическими графами
+
+#Course 6.889: Algorithms for Planner Graphs and Beoynd (Fall 2011)
+
+#Бенчмаркинг кода http://www.huyng.com/posts/python-performance-analysis/
+#Просмотр объектов  виде графа http://mg.pov.lt/objgraph/
+
+#Structure of complex network (стр 18)
+#http://www.maths.qmul.ac.uk/~latora/report_06.pdf
+
+#Много информации по графам
+#http://www.math.cmu.edu/~ctsourak/amazing.html
+
+#Анализ кода
+#http://www.pylint.org/
+
 class GraphAlgorithms:
     @classmethod
     def easy_short_path(self, graph, start, end):
@@ -674,112 +695,35 @@ class ChromaticNumber:
         self.sgraph = sgraph
         self.edges = list(self.sgraph.get_edges())
 
+    def _checkNeighboring(self, colors, data, node):
+        return 1 if len(list(dropwhile(lambda x: node not in data[x], colors.keys()))) == 0 else 0
+
     def run(self):
         '''
             Naive approach,
             return - min number of colors
             Кликовое число графа
+            Welsh-Powell Algorithm
         '''
         if self._isFullGraph():
             return len(sgraph.nodes())
+        nodes = self.sgraph.nodes()
+        if len(nodes) == 1:
+            return 1
+        if len(nodes) == 2:
+            return 2
+        sortedges = list(reversed(sorted(self.edges, \
+            key=lambda x: len(x[1]))))
+        data = {i:j for i,j in sortedges}
+        colors = {}
+        colors[sortedges[0][0]] = 1
+        for nod, conn in sortedges[1:]:
+            if self._checkNeighboring(colors, data, nod):
+                colors[nod] = 1
+        return colors
 
-        sortedges = list(reversed(sorted(self.edges, key=lambda x: len(x[1]))))
+    def _innerLoop(self):
+        pass
 
     def _isFullGraph(self):
         return len(list(filter(lambda x: len(x[1]) != len(self.sgraph.nodes())-1, self.edges))) == 0
-
-def test_nodes():
-    g = graph.Graph()
-    g.add_node(1)
-    g.add_node(2)
-    g.add_node(3)
-    g.add_node(4)
-    g.add_node(5)
-    '''g.add_node(6)
-    g.add_node(7)
-    g.add_node(8)'''
-    #g.add_edge('a')
-    g.add_edge(1,3,weight=7)
-    g.add_edge(1,4,weight=4)
-    g.add_edge(1,6,weight=3)
-    g.add_edge(2,3,weight=2)
-    g.add_edge(3,4,weight=3)
-    g.add_edge(3,6,weight=6)
-    g.add_edge(4,5,weight=1)
-    g.add_edge(5,6,weight=3)
-    g.add_edge(5,7,weight=2)
-    g.add_edge(6,7,weight=4)
-    g.add_edge(7,1,weight=1)
-    g.add_edge(7,8,weight=4)
-    g.add_edge(8,1,weight=2)
-#g.add_edge_random(4,max_weight=50)
-
-def test_kruskal():
-    g = graph.Graph()
-    '''g.add_node(1)
-    g.add_node(1)
-    g.add_node(2)
-    g.add_node(3)
-    g.add_node(4)
-    g.add_node(5)'''
-    g.add_nodes([], start = 1, step=1, end=5 )
-    g.add_nodes([], r=[1,1,5])
-    g.add_edge(1,4, weight=1, rev=True)
-    g.add_edge(1,5, weight=3, rev=True)
-    g.add_edge(4,5, weight=2, rev=True)
-    g.add_edge(4,2, weight=5, rev=True)
-    g.add_edge(5,2, weight=4, rev=True)
-    g.add_edge(5,3, weight=4, rev=True)
-    g.add_edge(2,3, weight=3, rev=True)
-    pr = Kruskal(g)
-    pr.run(1)
-    #http://www.frc.ri.cmu.edu/~axs/doc/icra94.pdf
-
-def test_prim():
-    g = graph.Graph()
-    g.add_node(1)
-    g.add_node(1)
-    g.add_node(2)
-    g.add_node(3)
-    g.add_node(4)
-    g.add_node(5)
-    g.add_edge(1,4, weight=1, rev=True)
-    g.add_edge(1,5, weight=3, rev=True)
-    g.add_edge(4,5, weight=2, rev=True)
-    g.add_edge(4,2, weight=5, rev=True)
-    g.add_edge(5,2, weight=4, rev=True)
-    g.add_edge(5,3, weight=4, rev=True)
-    g.add_edge(2,3, weight=3, rev=True)
-    pr = Prim(g)
-    print(pr.run(2))
-
-
-#Better MST. Tree contraction
-'''
-Tree contraction
-http://www.cs.cmu.edu/afs/cs.cmu.edu/project/phrensy/pub/papers/LeisersonM88/node15.html
-http://www.keisu.t.u-tokyo.ac.jp/research/techrep/data/2008/METR08-27.pdf Non B trees
-http://www.cs.duke.edu/~reif/paper/tate/dyntree/dyntree.pdf Описание
-На вход подаётся бинарное дерево
-
-На первом этапе, вершины A и B сливаются (Merge), также как и ноды C D
-Новое дерево формируется из вершин E и F и соединяются  с AB и CD. Дальше,
-E соединяется с CD и образует ноду CDE. После нескольких шагов, все вершины сливаются
-в единую ноду
-
-1. Делаем пару из входных узлов
-2. Следующая пара выбирается из соседей. Узел с двумя детьми выбирает потомка с вероятностью 1/2
-3. Если два узла подбирают друг друга(видимо случайным образом), то они сливаются
-Алгоритм O(lg n)
-
-'''
-
-def tree_contraction(bin_tree):
-    splee=[]
-    used=[]
-    used.append(bin_tree[0])
-    while len(used) > 0:
-        node = used.pop()
-        for new_node in node.values():
-            splee.append([node, newtree])
-    return splee
